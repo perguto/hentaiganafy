@@ -1,0 +1,30 @@
+<html>
+ <head>
+	 <meta charset="utf-8">
+				   <!-- type="module" -->
+	 <script src="./hentaiganafy.js" 
+				   ></script>
+	 <style>
+:root {
+	font-family: "BabelStone Han";
+}
+	 </style>
+ </head>
+ <body>
+	 <input type="text" id="input">
+	 <p id="output"></p>
+	 <script defer>
+		 let outputElement=document.querySelector('#output')
+		 let inputElement=document.querySelector('#input')
+		 // let inputText = 'これはね'
+		 // inputElement.addEventListener('change',processInput)
+		 inputElement.addEventListener('input',processInput)
+		 function processInput(){
+		 let	inputText =inputElement.value
+		 let result = hentaiganafy(inputText) 
+		 outputElement.innerText= result
+		 }
+
+	 </script>
+ </body>
+</html>
