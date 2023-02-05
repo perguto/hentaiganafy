@@ -1,0 +1,15 @@
+{
+  "tasks": {
+    "dev": "deno run --watch main.ts"
+  },
+	"lint":{
+		"rules":{
+			"exclude": [
+				"no-var",
+				"prefer-const",
+				"no-unused-vars",
+				"no-explicit-any"
+			]
+		}
+	}
+}
