@@ -1,0 +1,8 @@
+body {
+	font-family: 'UniHentaiKana';
+}
+
+@font-face {
+	font-family: 'UniHentaiKana';
+	src: url('./UniHentaiKana-Regular.woff');
+}
