@@ -68,7 +68,7 @@ function reverseDictionary(o) {
     return p;
 }
 function rom2hira(s) {
-    s = s.replaceAll(/[kgsztdnhbpmrywn]?[aiueo]/gi, t => rom2hiraTable[t.toLowerCase()]);
+    s = s.replaceAll(/[kgsztdnhbpmrywn]?[aiueo]/gi, t => rom2hiraTable[t.toLowerCase()] ?? t);
     return s;
 }
 function normalize(s) {

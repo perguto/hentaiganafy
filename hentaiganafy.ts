@@ -88,7 +88,7 @@ function reverseDictionary(o:Table){
 
 
 function rom2hira(s:string) {
-	s=s.replaceAll(/[kgsztdnhbpmrywn]?[aiueo]/gi,t=>rom2hiraTable[t.toLowerCase()])
+	s=s.replaceAll(/[kgsztdnhbpmrywn]?[aiueo]/gi,t=>rom2hiraTable[t.toLowerCase()]??t)
 	return s
 }
 
