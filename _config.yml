@@ -1,2 +1,2 @@
 exclude: ['./*.md', 'hentaigana.md','hentaigana.wt.md']
-
+  # * doesn't work
