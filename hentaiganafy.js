@@ -8,6 +8,56 @@ function _remap(s, table) {
     }
     return t;
 }
+const easyIndices = {
+    "あ": [0],
+    "い": [0],
+    "う": [1, 0],
+    "え": [2],
+    "お": [1, 0],
+    "か": [1],
+    "き": [2],
+    "く": [1, 0],
+    "け": [4],
+    "こ": [0],
+    "さ": [4],
+    "し": [1],
+    "す": [5],
+    "せ": [2],
+    "そ": [0],
+    "た": [1],
+    "ち": [4],
+    "つ": [1],
+    "て": [4],
+    "と": [0],
+    "な": [4, 2],
+    "に": [1],
+    "ぬ": [1],
+    "ね": [4, 3],
+    "の": [0],
+    "は": [3],
+    "ひ": [6],
+    "ふ": [0],
+    "へ": [6],
+    "ほ": [0, 1],
+    "ま": [2],
+    "み": [3],
+    "む": [0],
+    "め": [1],
+    "も": [1],
+    "や": [1, 0],
+    "ゆ": [1],
+    "よ": [3, 2],
+    "ら": [3],
+    "り": [0, 1],
+    "る": [2],
+    "れ": [1],
+    "ろ": [0, 1],
+    "わ": [2],
+    "ゐ": [3],
+    "ゑ": [0],
+    "を": [5, 6],
+    "ん": [1],
+};
 const hira2romTable = {
     "あ": "a",
     "い": "i",
@@ -67,12 +117,95 @@ function reverseDictionary(o) {
     }
     return p;
 }
+// U+3099
+const dakuten = "゙";
+// U+309A
+const handakuten = "゚";
+// U+3099 ◌゙ COMBINING KATAKANA-HIRAGANA VOICED SOUND MARK
+// U+309A ◌゚ COMBINING KATAKANA-HIRAGANA SEMI-VOICED SOUND MARK
+// U+309B ゛ KATAKANA-HIRAGANA VOICED SOUND MARK
+// U+309C ゜ KATAKANA-HIRAGANA SEMI-VOICED SOUND MARK
+// U+FF9E ﾞ HALFWIDTH KATAKANA VOICED SOUND MARK
+// U+FF9F ﾟ HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK
+const hira2small = {
+    "や": "ゃ",
+    "ゆ": "ゅ",
+    "よ": "ょ",
+    "あ": "ぁ",
+    "い": "ぃ",
+    "う": "ぅ",
+    "え": "ぇ",
+    "お": "ぉ",
+    "つ": "っ",
+    //	"":"",
+};
+const small2hira = reverseDictionary(hira2small);
+const daku2sei = {
+    "g": "k",
+    "z": "s",
+    "d": "t",
+    "b": "h",
+    // "":"",
+    // "":"",
+    // "":"",
+};
+const handaku2sei = {
+    "p": "b",
+};
+let consonants = [..."kgsztdnhbpmrywn"];
+function doubleConsonants2Q(s) {
+    let t = "";
+    for (let i = 0; i < s.length; i++) {
+        let c = s[i];
+        if (consonants.includes(c) && c === s[i + 1]) {
+            t += "Q";
+        }
+        else {
+            t += c;
+        }
+    }
+    return t;
+}
 function rom2hira(s) {
-    s = s.replaceAll(/[kgsztdnhbpmrywn]?[aiueo]/gi, t => rom2hiraTable[t.toLowerCase()] ?? t);
+    s = doubleConsonants2Q(s);
+    s = s.replaceAll(/([kgsztdnhbpmrywn]?y?[aiueo]|nn|Q)/gi, t => {
+        t = t.toLowerCase();
+        if (t === "q") {
+            return "っ";
+        }
+        let is_yoon = (t.length === 3);
+        let has_dakuten = /[gzdb]/.test(t[0]);
+        if (has_dakuten) {
+            // debugger
+            t = daku2sei[t[0]] + t.slice(1);
+        }
+        let has_handakuten = /p/.test(t[0]);
+        if (has_handakuten) {
+            t = handaku2sei[t[0]] + t.slice(1);
+        }
+        if (is_yoon) {
+            t = t[0] + "i" + t.slice(1);
+        }
+        let kana = rom2hiraTable[t.slice(0, 2)];
+        if (has_dakuten) {
+            kana += dakuten;
+        }
+        else if (has_handakuten) {
+            kana += handakuten;
+        }
+        if (is_yoon) {
+            kana += hira2small[rom2hiraTable[t.slice(2)]];
+        }
+        return kana;
+    });
     return s;
 }
+// function stripDakuten(s:string){
+// 	return s
+// }
 function normalize(s) {
     s = rom2hira(s);
+    s = s.normalize("NFD"); // separates dakuten from kana
     return s;
 }
 // const hentaiganaTable = globalThis.Deno ?
@@ -130,18 +263,45 @@ const hira2hentai = {
     "を": [["𛄖", "乎", "U+1B116"], ["𛄗", "乎", "U+1B117"], ["𛄘", "尾", "U+1B118"], ["𛄙", "緒", "U+1B119"], ["𛄚", "越", "U+1B11A"], ["𛄛", "遠", "U+1B11B"], ["𛄜", "遠", "U+1B11C"], ["𛀅", "惡", "U+1B005"]],
     "ん": [["𛄝", "无", "U+1B11D"], ["𛄞", "无", "U+1B11E"]]
 };
+const hentai2kanji = {};
+const kanji2hentai = {};
+const kanji2hira = {};
+const hentai2hira = {};
+for (let hira in hira2hentai) {
+    for (let [hentai, kanji, codepoint] of hira2hentai[hira]) {
+        hentai2kanji[hentai] = kanji;
+        hentai2hira[hentai] = hira;
+        kanji2hentai[kanji] = hentai;
+        kanji2hira[kanji] = hira;
+    }
+}
 function randomEntry(a) {
     return a[Math.floor(Math.random() * a.length)];
 }
-function hentaiganafy(s, mode = 0) {
+function hentaiganafy(s, choice = "random", output = "kana") {
+    const pos = {
+        "kana": 0,
+        "kanji": 1,
+        "codepoint": 2,
+    }[output];
     s = normalize(s);
     let t = '';
     for (let i = 0; i < s.length; i++) {
         let c = s[i];
+        c = small2hira[c] ?? c;
         const options = hira2hentai[c];
         if (options) {
-            let entry = randomEntry(options);
-            c = entry[mode];
+            let entry;
+            if (choice === "random") {
+                entry = randomEntry(options);
+            }
+            else if (choice === "easy") {
+                entry = options[randomEntry(easyIndices[c])];
+            }
+            else {
+                entry = options[easyIndices[c][0]];
+            }
+            c = entry[pos];
         }
         t += c;
     }
