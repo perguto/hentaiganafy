@@ -1,5 +1,13 @@
 // const fs=require('fs')
 // fs.readFileSync('./rois.tsv')
+function reverseDictionary(o) {
+    //let p=new o.constructor()
+    let p = {};
+    for (let [k, v] of Object.entries(o)) {
+        p[v] = k;
+    }
+    return p;
+}
 function _remap(s, table) {
     let t = '';
     for (let i = 0; i < s.length; i++) {
@@ -109,13 +117,58 @@ const hira2romTable = {
     "ん": "nn",
 };
 const rom2hiraTable = reverseDictionary(hira2romTable);
-function reverseDictionary(o) {
-    //let p=new o.constructor()
-    let p = {};
-    for (let [k, v] of Object.entries(o)) {
-        p[v] = k;
+const hiraStart = 0x3040;
+const hiraLength = 0x60;
+const hiraEnd = hiraStart + hiraLength;
+const kataStart = 0x30A0;
+const kataLength = 0x60;
+const kataEnd = kataStart + kataLength;
+const hira2kataOffset = kataStart - hiraStart;
+function shiftChars(s, offset, rangeTest = _ => true) {
+    let t = "";
+    for (let c of s) {
+        // Strings are iterated by Unicode code points. This means grapheme clusters will be split, but surrogate pairs will be preserved.
+        const codePoint = c.codePointAt(0);
+        if (codePoint === undefined) { // only to appease type checker
+            break;
+        }
+        const new_charpoint = codePoint + offset;
+        if (rangeTest(codePoint)) {
+            const new_char = String.fromCodePoint(new_charpoint);
+            t += new_char;
+        }
+        else {
+            t += c;
+        }
     }
-    return p;
+    return t;
+}
+function inRange(codePoint, inclusiveStart, exclusiveEnd) {
+    if (codePoint >= inclusiveStart && codePoint < exclusiveEnd) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+function inHiraRange(codePoint) {
+    return inRange(codePoint, hiraStart, hiraEnd);
+}
+function inKataRange(codePoint) {
+    return inRange(codePoint, kataStart, kataEnd);
+}
+// function inHiraRange(codePoint:number):boolean {
+// 	if(codePoint>=hiraStart && codePoint < hiraEnd){
+// 		return true
+// 	} else {
+// 		return false
+// 	}
+// }
+function hiraToKata(s) {
+    return shiftChars(s, hira2kataOffset, inHiraRange);
+}
+function kataToHira(s) {
+    return shiftChars(s, -hira2kataOffset, inKataRange);
 }
 // U+3099
 const dakuten = "゙";
@@ -205,6 +258,7 @@ function rom2hira(s) {
 // }
 function normalize(s) {
     s = rom2hira(s);
+    s = kataToHira(s);
     s = s.normalize("NFD"); // separates dakuten from kana
     return s;
 }
@@ -298,8 +352,11 @@ function hentaiganafy(s, choice = "random", output = "kana") {
             else if (choice === "easy") {
                 entry = options[randomEntry(easyIndices[c])];
             }
-            else {
+            else if (choice === "easiest") {
                 entry = options[easyIndices[c][0]];
+            }
+            else if (choice instanceof Array) {
+                entry = options[choice[i]];
             }
             c = entry[pos];
         }
@@ -307,9 +364,13 @@ function hentaiganafy(s, choice = "random", output = "kana") {
     }
     return t;
 }
-// const input = prompt()??
-// 	'わかりますか?'
-// const output = hentaiganafy(input,0)
+const input = //prompt()??
+ 'わかりますか?';
+const test_katakana = hiraToKata(input);
+const test_hiragana = kataToHira(test_katakana);
+// const output = hentaiganafy(input)
 // alert(output)
+console.log(test_katakana);
+console.log(test_hiragana);
 //
 // })()

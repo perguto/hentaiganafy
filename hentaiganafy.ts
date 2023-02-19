@@ -9,6 +9,16 @@
 interface Table {
 	[entry:string]:string
 }
+
+function reverseDictionary(o:Table){
+	//let p=new o.constructor()
+	let p:Table={}
+	for (let [k,v] of Object.entries(o)){
+		p[v]=k
+	}
+	return p
+}
+
 interface HentaiganaTable {
 	[hiragana:string]:[string,string,string][]
 }
@@ -26,6 +36,8 @@ function _remap(s:string,table:Table){
 interface IndexTable {
 	[hiragana:string]:number[],
 }
+
+
 
 const easyIndices : IndexTable = { 
 	"あ":[0],
@@ -131,13 +143,66 @@ const hira2romTable : Table = {
 
 const rom2hiraTable = reverseDictionary(hira2romTable)
 
-function reverseDictionary(o:Table){
-	//let p=new o.constructor()
-	let p:Table={}
-	for (let [k,v] of Object.entries(o)){
-		p[v]=k
+
+const hiraStart = 0x3040
+const hiraLength = 0x60
+const hiraEnd = hiraStart + hiraLength
+
+const kataStart = 0x30A0
+const kataLength = 0x60
+const kataEnd = kataStart + kataLength
+
+const hira2kataOffset = kataStart - hiraStart
+
+function shiftChars(s : string, offset : number, rangeTest:(codePoint : number) => boolean  = _=>true){
+	let t=""
+	for(let c of s){
+		// Strings are iterated by Unicode code points. This means grapheme clusters will be split, but surrogate pairs will be preserved.
+		const codePoint = c.codePointAt(0)
+		if(codePoint === undefined){ // only to appease type checker
+			break;
+		}
+		const new_charpoint = codePoint + offset
+		if(rangeTest(codePoint)){
+			const new_char = String.fromCodePoint(new_charpoint)
+			t += new_char
+		} else {
+			t+=c
+		}
 	}
-	return p
+	return t
+}
+function inRange(codePoint:number,inclusiveStart:number,exclusiveEnd:number):boolean {
+	if(codePoint>=inclusiveStart && codePoint < exclusiveEnd){
+		return true
+	} else {
+		return false
+	}
+}
+
+function inHiraRange(codePoint:number):boolean{
+	return inRange(codePoint,hiraStart,hiraEnd)
+}
+
+function inKataRange(codePoint:number):boolean{
+	return inRange(codePoint,kataStart,kataEnd)
+}
+
+// function inHiraRange(codePoint:number):boolean {
+// 	if(codePoint>=hiraStart && codePoint < hiraEnd){
+// 		return true
+// 	} else {
+// 		return false
+// 	}
+// }
+
+function hiraToKata(s : string){
+	return shiftChars(s,hira2kataOffset,inHiraRange)
+}
+
+
+function kataToHira(s : string){
+	return shiftChars(s,-hira2kataOffset,inKataRange)
 }
 
 // U+3099
@@ -163,7 +228,7 @@ const hira2small : Table = {
 	"え":"ぇ",
 	"お":"ぉ",
 	"つ":"っ",
-//	"":"",
+	//	"":"",
 }
 
 const small2hira = reverseDictionary(hira2small)
@@ -237,6 +302,7 @@ function rom2hira(s:string) {
 
 function normalize(s:string){
 	s=rom2hira(s)
+	s=kataToHira(s)
 	s=s.normalize("NFD") // separates dakuten from kana
 	return s
 }
@@ -317,7 +383,7 @@ function randomEntry(a:Array<any>){
 }
 
 type Output = "kana" | "kanji" | "codepoint"
-type Choice = "random" | "easy" | "easiest" // | number[]
+type Choice = "random" | "easy" | "easiest"  | number[]
 
 function hentaiganafy(s:string,choice : Choice = "random",output :Output="kana"){
 	const pos = {
@@ -338,8 +404,10 @@ function hentaiganafy(s:string,choice : Choice = "random",output :Output="kana")
 				entry = randomEntry(options)
 			} else if(choice==="easy"){
 				entry = options[randomEntry(easyIndices[c])]
-			} else {
+			} else if(choice === "easiest") {
 				entry = options[easyIndices[c][0]]
+			} else if(choice instanceof Array) {
+				entry = options[choice[i]]
 			}
 			c=entry[pos]
 		}
@@ -348,11 +416,16 @@ function hentaiganafy(s:string,choice : Choice = "random",output :Output="kana")
 	return t
 }
 
-// const input = prompt()??
-// 	'わかりますか?'
+const input = //prompt()??
+	'わかりますか?'
+const test_katakana = hiraToKata(input)
+const test_hiragana = kataToHira(test_katakana)
 
-// const output = hentaiganafy(input,0)
-
+// const output = hentaiganafy(input)
 // alert(output)
+
+console.log(test_katakana)
+console.log(test_hiragana)
+
 //
 // })()

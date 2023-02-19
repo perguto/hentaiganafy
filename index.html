@@ -1,44 +1,45 @@
 <html>
- <head>
-	 <meta charset="utf-8">
-				   <!-- type="module" -->
+	<head>
+		<meta charset="utf-8">
+		<!-- type="module" -->
 		<link rel="stylesheet" href="style.css"></link>
-	 <script defer src="./hentaiganafy.js" 
-				   ></script>
-	 <!-- <style> -->
+		<script defer src="./hentaiganafy.js" 
+					  ></script>
+		<!-- <style> -->
 <!-- :root { -->
 	<!-- font-family: "BabelStone Han"; -->
-<!-- } -->
-	 <!-- </style> -->
- </head>
- <body>
-	 <h1 id="title">変体仮名変換ツール</h1>
-	 <p id="before_input">ローマ字・ひらがな：</p>
-	 <input type="text" id="input">
-	 <p id="before_output">変体仮名</p>
-	 <p id="output"></p>
-	 <p id="before_easy_output">変体仮名(読みやすい)</p>
-	 <p id="easy_output"></p>
-	 <p id="before_easiest_output">変体仮名(一番読みやすい)</p>
-	 <p id="easiest_output"></p>
+	<!-- } -->
+	<!-- </style> -->
+	</head>
+	<body>
+		<h1 id="title">変体仮名変換ツール</h1>
+		<p id="before_input">ローマ字・ひらがな：</p>
+		<input type="text" id="input">
+		<p id="before_output">変体仮名</p>
+		<p id="output"></p>
+		<p id="before_easy_output">変体仮名(読みやすい)</p>
+		<p id="easy_output"></p>
+		<p id="before_easiest_output">変体仮名(一番読みやすい)</p>
+		<p id="easiest_output"></p>
 
-	 <a download href="./UniHentaiKana-Regular.woff">変体仮名フォントをダウンロード</a>
-	 <script defer>
-		 let outputElement=document.querySelector('#output')
-		 let inputElement=document.querySelector('#input')
-		 let easy_outputElement=document.querySelector('#easy_output')
-		 let easiest_outputElement=document.querySelector('#easiest_output')
-		 // let inputText = 'これはね'
-		 // inputElement.addEventListener('change',processInput)
-		 inputElement.addEventListener('input',processInput)
-		 function processInput(){
-		 let	inputText =inputElement.value
-		 let result = hentaiganafy(inputText) 
-		 outputElement.innerText= result
-		 easy_outputElement.innerText = hentaiganafy(inputText,"easy")
-		 easiest_outputElement.innerText = hentaiganafy(inputText,"easiest")
+		<a download href="./UniHentaiKana-Regular.woff">変体仮名フォントをダウンロード</a>
+		<script defer>
+		let outputElement=document.querySelector('#output')
+		let inputElement=document.querySelector('#input')
+		let easy_outputElement=document.querySelector('#easy_output')
+		let easiest_outputElement=document.querySelector('#easiest_output')
+		let numbers = []
+		// let inputText = 'これはね'
+		// inputElement.addEventListener('change',processInput)
+		inputElement.addEventListener('input',processInput)
+		function processInput(){
+			let	inputText =inputElement.value
+			let result = hentaiganafy(inputText) 
+			outputElement.innerText= result
+			easy_outputElement.innerText = hentaiganafy(inputText,"easy")
+			easiest_outputElement.innerText = hentaiganafy(inputText,"easiest")
 		 }
 
-	 </script>
- </body>
+		</script>
+	</body>
 </html>
