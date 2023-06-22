@@ -3,8 +3,6 @@
 		<meta charset="utf-8">
 		<!-- type="module" -->
 		<link rel="stylesheet" href="style.css"></link>
-		<script defer src="./hentaiganafy.js" 
-					  ></script>
 		<!-- <style> -->
 <!-- :root { -->
 	<!-- font-family: "BabelStone Han"; -->
@@ -23,6 +21,7 @@
 		<p id="easiest_output"></p>
 
 		<a download href="./UniHentaiKana-Regular.woff">変体仮名フォントをダウンロード</a>
+		<script src="./hentaiganafy.ts.js"></script>
 		<script defer>
 		let outputElement=document.querySelector('#output')
 		let inputElement=document.querySelector('#input')
@@ -39,6 +38,15 @@
 			easy_outputElement.innerText = hentaiganafy(inputText,"easy")
 			easiest_outputElement.innerText = hentaiganafy(inputText,"easiest")
 		 }
+		 if(URL){
+		 const url = new URL(location.href)
+		 const urlQuery = url.searchParams.get('q')
+		 if(urlQuery){
+		 	inputElement.value = urlQuery
+			processInput()
+			}
+			// inputElement.dispatchEvent('input') // doesn't work
+}
 
 		</script>
 	</body>

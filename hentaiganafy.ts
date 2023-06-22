@@ -6,91 +6,35 @@
 
 // (()=>{
 
-interface Table {
+interface Dict {
 	[entry:string]:string
 }
 
-function reverseDictionary(o:Table){
-	//let p=new o.constructor()
-	let p:Table={}
-	for (let [k,v] of Object.entries(o)){
+function reverseDict(dict:Dict){
+	const p:Dict = {}
+	for (const [k,v] of Object.entries(dict)){
 		p[v]=k
 	}
 	return p
 }
 
-interface HentaiganaTable {
-	[hiragana:string]:[string,string,string][]
-}
-
-function _remap(s:string,table:Table){
+function _remap(s:string,dict:Dict){
 	let t=''
 	for(let i = 0; i<s.length; i++){
 		const c=s[i]
-		t+=(table[c]??c)
+		t+=(dict[c]??c)
 	}
 	return t
 }
 
 
-interface IndexTable {
+interface IndexDict {
 	[hiragana:string]:number[],
 }
 
 
 
-const easyIndices : IndexTable = { 
-	"あ":[0],
-	"い":[0],
-	"う":[1,0],
-	"え":[2],
-	"お":[1,0],
-	"か":[1],
-	"き":[2],
-	"く":[1,0],
-	"け":[4],
-	"こ":[0],
-	"さ":[4],
-	"し":[1],
-	"す":[5],
-	"せ":[2],
-	"そ":[0],
-	"た":[1],//none easy
-	"ち":[4],
-	"つ":[1],
-	"て":[4],
-	"と":[0],//from tuti, none easy
-	"な":[4,2],
-	"に":[1],
-	"ぬ":[1],
-	"ね":[4,3],
-	"の":[0],
-	"は":[3],// 0 katakana-like,
-	"ひ":[6],
-	"ふ":[0],
-	"へ":[6],
-	"ほ":[0,1],//both etymological, none easy, 1  more reduced
-	"ま":[2],
-	"み":[3],
-	"む":[0],
-	"め":[1],
-	"も":[1],
-	"や":[1,0],
-	"ゆ":[1],
-	"よ":[3,2],
-	"ら":[3],
-	"り":[0,1],//1 more reduced but harder
-	"る":[2],
-	"れ":[1],
-	"ろ":[0,1],
-	"わ":[2],
-	"ゐ":[3],
-	"ゑ":[0],
-	"を":[5,6],
-	"ん":[1],
-}
-
-const hira2romTable : Table = { 
+const hira2romDict : Dict = { 
 	"あ":"a",
 	"い":"i",
 	"う":"u",
@@ -141,7 +85,7 @@ const hira2romTable : Table = {
 	"ん":"nn",
 }
 
-const rom2hiraTable = reverseDictionary(hira2romTable)
+const rom2hiraDict = reverseDict(hira2romDict)
 
 
 const hiraStart = 0x3040
@@ -156,7 +100,7 @@ const hira2kataOffset = kataStart - hiraStart
 
 function shiftChars(s : string, offset : number, rangeTest:(codePoint : number) => boolean  = _=>true){
 	let t=""
-	for(let c of s){
+	for(const c of s){
 		// Strings are iterated by Unicode code points. This means grapheme clusters will be split, but surrogate pairs will be preserved.
 		const codePoint = c.codePointAt(0)
 		if(codePoint === undefined){ // only to appease type checker
@@ -218,7 +162,7 @@ const handakuten = "゚"
 // U+FF9E ﾞ HALFWIDTH KATAKANA VOICED SOUND MARK
 // U+FF9F ﾟ HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK
 
-const hira2small : Table = {
+const hira2small : Dict = {
 	"や":"ゃ",
 	"ゆ":"ゅ",
 	"よ":"ょ",
@@ -231,9 +175,9 @@ const hira2small : Table = {
 	//	"":"",
 }
 
-const small2hira = reverseDictionary(hira2small)
+const small2hira = reverseDict(hira2small)
 
-const daku2sei : Table= {
+const daku2sei : Dict= {
 	"g":"k",
 	"z":"s",
 	"d":"t",
@@ -243,16 +187,16 @@ const daku2sei : Table= {
 	// "":"",
 }
 
-const handaku2sei : Table = {
-	"p" : "b",
+const handaku2sei : Dict = {
+	"p" : "h",
 }
 
-let consonants = [..."kgsztdnhbpmrywn"]
+const consonants = [..."kgsztdnhbpmrywn"]
 
 function doubleConsonants2Q(s:string){
 	let t=""
 	for(let i=0;i<s.length;i++){
-		let c = s[i]
+		const c = s[i]
 		if(consonants.includes(c) && c === s[i+1]){
 			t+="Q"
 		} else {
@@ -269,27 +213,27 @@ function rom2hira(s:string) {
 		if(t==="q"){
 			return "っ"
 		}
-		let is_yoon = (t.length === 3)
-		let has_dakuten = /[gzdb]/.test(t[0])
+		const is_yoon = (t.length === 3)
+		const has_dakuten = /[gzdb]/.test(t[0])
 		if(has_dakuten){
 			// debugger
 			t = daku2sei[t[0]]+ t.slice(1)
 		}
-		let has_handakuten = /p/.test(t[0])
+		const has_handakuten = /p/.test(t[0])
 		if(has_handakuten){
 			t = handaku2sei[t[0]]+ t.slice(1)
 		}
 		if(is_yoon){
 			t = t[0]+ "i" + t.slice(1)
 		}
-		let kana = rom2hiraTable[t.slice(0,2)]
+		let kana = rom2hiraDict[t.slice(0,2)]
 		if(has_dakuten){
 			kana += dakuten
 		} else if(has_handakuten){
 			kana += handakuten
 		}
 		if(is_yoon){
-			kana += hira2small[rom2hiraTable[t.slice(2)]]
+			kana += hira2small[rom2hiraDict[t.slice(2)]]
 		}
 		return kana
 	})
@@ -306,13 +250,17 @@ function normalize(s:string){
 	s=s.normalize("NFD") // separates dakuten from kana
 	return s
 }
-// const hentaiganaTable = globalThis.Deno ?
+// const hentaiganaDict = globalThis.Deno ?
 // 	globalThis.Deno.readTextFileSync("./rois.json")
 // :
 // 	await fetch("./rois.json").then(r => r.text())
 
-// const hira2hentai : HentaiganaTable = JSON.parse(hentaiganaTable)
-const hira2hentai : HentaiganaTable  = 
+interface HentaiganaDict {
+	[hiragana:string]:[string,string,string][]
+}
+
+// const hira2hentai : HentaiganaDict = JSON.parse(hentaiganaDict)
+const hira2hentai : HentaiganaDict  = 
 	{
 		"あ": [[ "𛀂","安" ,"U+1B002"],[ "𛀃","愛" ,"U+1B003"],[ "𛀄","阿" ,"U+1B004"],[ "𛀅","惡" ,"U+1B005"]],
 		"い": [[ "𛀆","以" ,"U+1B006"],[ "𛀇","伊" ,"U+1B007"],[ "𛀈","意" ,"U+1B008"],[ "𛀉","移" ,"U+1B009"]],
@@ -364,13 +312,65 @@ const hira2hentai : HentaiganaTable  =
 		"ん": [[ "𛄝","无" ,"U+1B11D"],[ "𛄞","无" ,"U+1B11E"]]
 	}
 
-const hentai2kanji :Table = {}
-const kanji2hentai :Table = {}
-const kanji2hira :Table = {}
 
-const hentai2hira :Table = {}
-for(let hira in hira2hentai){
-	for(let [hentai,kanji,codepoint] of hira2hentai[hira]){
+const easyIndices : IndexDict = { 
+	"あ":[0],
+	"い":[0],
+	"う":[1,0],
+	"え":[2],
+	"お":[1,0],
+	"か":[1],
+	"き":[2],
+	"く":[1,0],
+	"け":[4],
+	"こ":[0],
+	"さ":[4],
+	"し":[1],
+	"す":[5],
+	"せ":[2],
+	"そ":[0],
+	"た":[1],//none easy
+	"ち":[4],
+	"つ":[1],
+	"て":[4],
+	"と":[0],//from tuti, none easy
+	"な":[4,2],
+	"に":[1],
+	"ぬ":[1],
+	"ね":[4,3],
+	"の":[0],
+	"は":[3],// 0 katakana-like,
+	"ひ":[6],
+	"ふ":[0],
+	"へ":[6],
+	"ほ":[0,1],//both etymological, none easy, 1  more reduced
+	"ま":[2],
+	"み":[3],
+	"む":[0],
+	"め":[1],
+	"も":[1],
+	"や":[1,0],
+	"ゆ":[1],
+	"よ":[3,2],
+	"ら":[3],
+	"り":[0,1],//1 more reduced but harder
+	"る":[2],
+	"れ":[1],
+	"ろ":[0,1],
+	"わ":[2],
+	"ゐ":[3],
+	"ゑ":[0],
+	"を":[5,6],
+	"ん":[1],
+}
+
+const hentai2kanji :Dict = {}
+const kanji2hentai :Dict = {}
+const kanji2hira :Dict = {}
+
+const hentai2hira :Dict = {}
+for(const hira in hira2hentai){
+	for(const [hentai,kanji,codepoint] of hira2hentai[hira]){
 		hentai2kanji[hentai]=kanji
 		hentai2hira[hentai]=hira
 		kanji2hentai[kanji]=hentai
@@ -378,7 +378,7 @@ for(let hira in hira2hentai){
 	}
 }
 
-function randomEntry(a:Array<any>){
+function randomEntry<T>(a:Array<T>):T{
 	return a[Math.floor(Math.random()*a.length)]
 }
 
@@ -409,6 +409,7 @@ function hentaiganafy(s:string,choice : Choice = "random",output :Output="kana")
 			} else if(choice instanceof Array) {
 				entry = options[choice[i]]
 			}
+			debugger
 			c=entry[pos]
 		}
 		t+=c
@@ -418,14 +419,16 @@ function hentaiganafy(s:string,choice : Choice = "random",output :Output="kana")
 
 const input = //prompt()??
 	'わかりますか?'
+
+const test_hentaigana = hentaiganafy('pa')
+
 const test_katakana = hiraToKata(input)
 const test_hiragana = kataToHira(test_katakana)
 
-// const output = hentaiganafy(input)
-// alert(output)
 
 console.log(test_katakana)
 console.log(test_hiragana)
+console.log(test_hentaigana)
 
 //
 // })()

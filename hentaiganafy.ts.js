@@ -1,32 +1,21 @@
 // const fs=require('fs')
 // fs.readFileSync('./rois.tsv')
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 function reverseDict(dict) {
-    var p = {};
-    for (var _i = 0, _a = Object.entries(dict); _i < _a.length; _i++) {
-        var _b = _a[_i], k = _b[0], v = _b[1];
+    const p = {};
+    for (const [k, v] of Object.entries(dict)) {
         p[v] = k;
     }
     return p;
 }
 function _remap(s, dict) {
-    var _a;
-    var t = '';
-    for (var i = 0; i < s.length; i++) {
-        var c_1 = s[i];
-        t += ((_a = dict[c_1]) !== null && _a !== void 0 ? _a : c_1);
+    let t = '';
+    for (let i = 0; i < s.length; i++) {
+        const c = s[i];
+        t += (dict[c] ?? c);
     }
     return t;
 }
-var hira2romDict = {
+const hira2romDict = {
     "あ": "a",
     "い": "i",
     "う": "u",
@@ -74,33 +63,31 @@ var hira2romDict = {
     "ゐ": "wi",
     "ゑ": "we",
     "を": "wo",
-    "ん": "nn"
+    "ん": "nn",
 };
-var rom2hiraDict = reverseDict(hira2romDict);
-var hiraStart = 0x3040;
-var hiraLength = 0x60;
-var hiraEnd = hiraStart + hiraLength;
-var kataStart = 0x30A0;
-var kataLength = 0x60;
-var kataEnd = kataStart + kataLength;
-var hira2kataOffset = kataStart - hiraStart;
-function shiftChars(s, offset, rangeTest) {
-    if (rangeTest === void 0) { rangeTest = function (_) { return true; }; }
-    var t = "";
-    for (var _i = 0, s_1 = s; _i < s_1.length; _i++) {
-        var c_2 = s_1[_i];
+const rom2hiraDict = reverseDict(hira2romDict);
+const hiraStart = 0x3040;
+const hiraLength = 0x60;
+const hiraEnd = hiraStart + hiraLength;
+const kataStart = 0x30A0;
+const kataLength = 0x60;
+const kataEnd = kataStart + kataLength;
+const hira2kataOffset = kataStart - hiraStart;
+function shiftChars(s, offset, rangeTest = _ => true) {
+    let t = "";
+    for (const c of s) {
         // Strings are iterated by Unicode code points. This means grapheme clusters will be split, but surrogate pairs will be preserved.
-        var codePoint = c_2.codePointAt(0);
+        const codePoint = c.codePointAt(0);
         if (codePoint === undefined) { // only to appease type checker
             break;
         }
-        var new_charpoint = codePoint + offset;
+        const new_charpoint = codePoint + offset;
         if (rangeTest(codePoint)) {
-            var new_char = String.fromCodePoint(new_charpoint);
+            const new_char = String.fromCodePoint(new_charpoint);
             t += new_char;
         }
         else {
-            t += c_2;
+            t += c;
         }
     }
     return t;
@@ -133,16 +120,16 @@ function kataToHira(s) {
     return shiftChars(s, -hira2kataOffset, inKataRange);
 }
 // U+3099
-var dakuten = "゙";
+const dakuten = "゙";
 // U+309A
-var handakuten = "゚";
+const handakuten = "゚";
 // U+3099 ◌゙ COMBINING KATAKANA-HIRAGANA VOICED SOUND MARK
 // U+309A ◌゚ COMBINING KATAKANA-HIRAGANA SEMI-VOICED SOUND MARK
 // U+309B ゛ KATAKANA-HIRAGANA VOICED SOUND MARK
 // U+309C ゜ KATAKANA-HIRAGANA SEMI-VOICED SOUND MARK
 // U+FF9E ﾞ HALFWIDTH KATAKANA VOICED SOUND MARK
 // U+FF9F ﾟ HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK
-var hira2small = {
+const hira2small = {
     "や": "ゃ",
     "ゆ": "ゅ",
     "よ": "ょ",
@@ -151,53 +138,57 @@ var hira2small = {
     "う": "ぅ",
     "え": "ぇ",
     "お": "ぉ",
-    "つ": "っ"
+    "つ": "っ",
+    //	"":"",
 };
-var small2hira = reverseDict(hira2small);
-var daku2sei = {
+const small2hira = reverseDict(hira2small);
+const daku2sei = {
     "g": "k",
     "z": "s",
     "d": "t",
-    "b": "h"
+    "b": "h",
+    // "":"",
+    // "":"",
+    // "":"",
 };
-var handaku2sei = {
-    "p": "b"
+const handaku2sei = {
+    "p": "h",
 };
-var consonants = __spreadArray([], "kgsztdnhbpmrywn", true);
+const consonants = [..."kgsztdnhbpmrywn"];
 function doubleConsonants2Q(s) {
-    var t = "";
-    for (var i = 0; i < s.length; i++) {
-        var c_3 = s[i];
-        if (consonants.includes(c_3) && c_3 === s[i + 1]) {
+    let t = "";
+    for (let i = 0; i < s.length; i++) {
+        const c = s[i];
+        if (consonants.includes(c) && c === s[i + 1]) {
             t += "Q";
         }
         else {
-            t += c_3;
+            t += c;
         }
     }
     return t;
 }
 function rom2hira(s) {
     s = doubleConsonants2Q(s);
-    s = s.replaceAll(/([kgsztdnhbpmrywn]?y?[aiueo]|nn|Q)/gi, function (t) {
+    s = s.replaceAll(/([kgsztdnhbpmrywn]?y?[aiueo]|nn|Q)/gi, t => {
         t = t.toLowerCase();
         if (t === "q") {
             return "っ";
         }
-        var is_yoon = (t.length === 3);
-        var has_dakuten = /[gzdb]/.test(t[0]);
+        const is_yoon = (t.length === 3);
+        const has_dakuten = /[gzdb]/.test(t[0]);
         if (has_dakuten) {
             // debugger
             t = daku2sei[t[0]] + t.slice(1);
         }
-        var has_handakuten = /p/.test(t[0]);
+        const has_handakuten = /p/.test(t[0]);
         if (has_handakuten) {
             t = handaku2sei[t[0]] + t.slice(1);
         }
         if (is_yoon) {
             t = t[0] + "i" + t.slice(1);
         }
-        var kana = rom2hiraDict[t.slice(0, 2)];
+        let kana = rom2hiraDict[t.slice(0, 2)];
         if (has_dakuten) {
             kana += dakuten;
         }
@@ -221,7 +212,7 @@ function normalize(s) {
     return s;
 }
 // const hira2hentai : HentaiganaDict = JSON.parse(hentaiganaDict)
-var hira2hentai = {
+const hira2hentai = {
     "あ": [["𛀂", "安", "U+1B002"], ["𛀃", "愛", "U+1B003"], ["𛀄", "阿", "U+1B004"], ["𛀅", "惡", "U+1B005"]],
     "い": [["𛀆", "以", "U+1B006"], ["𛀇", "伊", "U+1B007"], ["𛀈", "意", "U+1B008"], ["𛀉", "移", "U+1B009"]],
     "う": [["𛀊", "宇", "U+1B00A"], ["𛀋", "宇", "U+1B00B"], ["𛀌", "憂", "U+1B00C"], ["𛀍", "有", "U+1B00D"], ["𛀎", "雲", "U+1B00E"]],
@@ -271,7 +262,7 @@ var hira2hentai = {
     "を": [["𛄖", "乎", "U+1B116"], ["𛄗", "乎", "U+1B117"], ["𛄘", "尾", "U+1B118"], ["𛄙", "緒", "U+1B119"], ["𛄚", "越", "U+1B11A"], ["𛄛", "遠", "U+1B11B"], ["𛄜", "遠", "U+1B11C"], ["𛀅", "惡", "U+1B005"]],
     "ん": [["𛄝", "无", "U+1B11D"], ["𛄞", "无", "U+1B11E"]]
 };
-var easyIndices = {
+const easyIndices = {
     "あ": [0],
     "い": [0],
     "う": [1, 0],
@@ -319,15 +310,14 @@ var easyIndices = {
     "ゐ": [3],
     "ゑ": [0],
     "を": [5, 6],
-    "ん": [1]
+    "ん": [1],
 };
-var hentai2kanji = {};
-var kanji2hentai = {};
-var kanji2hira = {};
-var hentai2hira = {};
-for (var hira in hira2hentai) {
-    for (var _i = 0, _a = hira2hentai[hira]; _i < _a.length; _i++) {
-        var _b = _a[_i], hentai = _b[0], kanji = _b[1], codepoint = _b[2];
+const hentai2kanji = {};
+const kanji2hentai = {};
+const kanji2hira = {};
+const hentai2hira = {};
+for (const hira in hira2hentai) {
+    for (const [hentai, kanji, codepoint] of hira2hentai[hira]) {
         hentai2kanji[hentai] = kanji;
         hentai2hira[hentai] = hira;
         kanji2hentai[kanji] = hentai;
@@ -337,48 +327,48 @@ for (var hira in hira2hentai) {
 function randomEntry(a) {
     return a[Math.floor(Math.random() * a.length)];
 }
-function hentaiganafy(s, choice, output) {
-    var _a;
-    if (choice === void 0) { choice = "random"; }
-    if (output === void 0) { output = "kana"; }
-    var pos = {
+function hentaiganafy(s, choice = "random", output = "kana") {
+    const pos = {
         "kana": 0,
         "kanji": 1,
-        "codepoint": 2
+        "codepoint": 2,
     }[output];
     s = normalize(s);
-    var t = '';
-    for (var i = 0; i < s.length; i++) {
-        var c_4 = s[i];
-        c_4 = (_a = small2hira[c_4]) !== null && _a !== void 0 ? _a : c_4;
-        var options = hira2hentai[c_4];
+    let t = '';
+    for (let i = 0; i < s.length; i++) {
+        let c = s[i];
+        c = small2hira[c] ?? c;
+        const options = hira2hentai[c];
         if (options) {
-            var entry = void 0;
+            let entry;
             if (choice === "random") {
                 entry = randomEntry(options);
             }
             else if (choice === "easy") {
-                entry = options[randomEntry(easyIndices[c_4])];
+                entry = options[randomEntry(easyIndices[c])];
             }
             else if (choice === "easiest") {
-                entry = options[easyIndices[c_4][0]];
+                entry = options[easyIndices[c][0]];
             }
             else if (choice instanceof Array) {
                 entry = options[choice[i]];
             }
-            c_4 = entry[pos];
+            debugger;
+            c = entry[pos];
         }
-        t += c_4;
+        t += c;
     }
     return t;
 }
-var input = //prompt()??
+const input = //prompt()??
  'わかりますか?';
-var test_katakana = hiraToKata(input);
-var test_hiragana = kataToHira(test_katakana);
+const test_hentaigana = hentaiganafy('pa');
+const test_katakana = hiraToKata(input);
+const test_hiragana = kataToHira(test_katakana);
 // const output = hentaiganafy(input)
 // alert(output)
 console.log(test_katakana);
 console.log(test_hiragana);
+console.log(test_hentaigana);
 //
 // })()
